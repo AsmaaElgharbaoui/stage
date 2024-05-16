@@ -18,24 +18,47 @@ import { bgGradient } from 'src/theme/css';
 import Logo from 'src/components/logo';
 import Iconify from 'src/components/iconify';
 
-// ----------------------------------------------------------------------
-
 export default function LoginView() {
   const theme = useTheme();
-
   const router = useRouter();
-
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleClick = () => {
-    router.push('/dashboard');
+  const handleClick = async () => {
+    setLoading(true);
+    setError('');
+
+    const email = document.querySelector('[name="email"]').value;
+    const password = document.querySelector('[name="password"]').value;
+
+    try {
+      const response = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Mot de passe incorrect ou utilisateur non trouvé');
+      }
+
+      // Utiliser le router de Next.js pour rediriger vers http://localhost:3030/
+      router.push('/app');
+
+    } catch (catchError) {
+      setError(catchError.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderForm = (
     <>
       <Stack spacing={3}>
         <TextField name="email" label="Email address" />
-
         <TextField
           name="password"
           label="Password"
@@ -64,10 +87,15 @@ export default function LoginView() {
         type="submit"
         variant="contained"
         color="inherit"
+        loading={loading}
         onClick={handleClick}
       >
         Login
       </LoadingButton>
+
+      {error && (
+        <Typography variant="body2" sx={{ color: 'error.main' }}>{error}</Typography>
+      )}
     </>
   );
 
@@ -98,9 +126,6 @@ export default function LoginView() {
           }}
         >
           <Typography variant="h4" sx={{ textAlign: 'center' }}>Login</Typography>
-
-
-          
 
           {renderForm}
         </Card>

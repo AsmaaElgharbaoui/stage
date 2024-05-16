@@ -3,7 +3,50 @@ import pool from "../utils/db.js";
 import bcrypt from 'bcrypt';
 import bodyParser from "body-parser";
 const router = express.Router();
+import session from 'express-session';
 
+router.use(session({
+  secret: 'asmae1234', // Remplacez ceci par une chaîne de caractères aléatoire pour sécuriser votre session
+  resave: false,
+  saveUninitialized: true
+}));
+
+router.use(bodyParser.json());
+
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      const user = await pool.query('SELECT * FROM utilisateur WHERE email = $1', [email]);
+  
+      if (user.rows.length === 0) {
+        return res.status(404).send("Utilisateur non trouvé");
+      }
+      const hashedPassword = user.rows[0].password;
+      const isPasswordValid = await bcrypt.compare(password, hashedPassword);
+  
+      if (!isPasswordValid) {
+        return res.status(401).send("Mot de passe incorrect");
+      }
+      if (user.rows[0].role !== 'admin') {
+        return res.status(403).send("Vous n'avez pas les autorisations d'administrateur nécessaires");
+      }
+      req.session.user = user.rows[0];
+      res.status(200).send("Connexion réussie"); // Envoyer un message de succès
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Erreur du serveur');
+    }
+});
+
+
+router.get('/checkAdmin', (req, res) => {
+    if (req.session.user && req.session.user.role === 'admin') {
+      return res.status(200).send("Connecté en tant qu'administrateur");
+    } else {
+      return res.status(401).send("Non autorisé");
+    }
+});
 
 router.post('/patients', async (req, res) => {
     const { cine, email, firstName, lastName, birthdate, age, region, address, phoneNumber, gender } = req.body;
@@ -19,11 +62,9 @@ router.post('/patients', async (req, res) => {
     }
 });
 
-
 router.post('/utilisateurs', async (req, res) => {
     const { cine, nom, prenom, email, password, statut, role } = req.body;
     try {
-        // Vous pouvez ajouter ici un hashage de mot de passe si nécessaire, par exemple avec bcrypt
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -34,28 +75,26 @@ router.post('/utilisateurs', async (req, res) => {
         res.status(201).json(newUser.rows[0]);
     } catch (err) {
         console.error(err.message);
-        if (err.code === '23505') { // Postgres error code for unique violation
+        if (err.code === '23505') {
             return res.status(409).send("Un utilisateur avec cet email ou CINE existe déjà.");
         }
         res.status(500).send('Server error');
     }
 });
+
 router.put('/utilisateurs/:cine', async (req, res) => {
     const { cine } = req.params;
-    const { statut } = req.body; // Seul le statut est mis à jour ici, vous pouvez ajouter d'autres champs si nécessaire
+    const { statut } = req.body;
     try {
-        // Mise à jour du statut de l'utilisateur dans la base de données
         const updatedUser = await pool.query(
             'UPDATE utilisateur SET statut = $1 WHERE cine = $2 RETURNING *',
             [statut, cine]
         );
 
-        // Vérification si l'utilisateur a été mis à jour
         if (updatedUser.rows.length === 0) {
             return res.status(404).send("Utilisateur non trouvé");
         }
 
-        // Réponse avec l'utilisateur mis à jour
         res.status(200).json(updatedUser.rows[0]);
     } catch (err) {
         console.error(err.message);
@@ -80,16 +119,15 @@ router.delete('/utilisateurs/:cine', async (req, res) => {
     }
 });
 
-
 router.get('/getUsers', async (req, res) => {
     try {
         const result = await pool.query(
             'SELECT cine, nom, prenom, email, statut, role FROM utilisateur'
         );
         if (result.rows.length > 0) {
-            res.json(result.rows); // Envoie les données de tous les utilisateurs sans les mots de passe
+            res.json(result.rows);
         } else {
-            res.status(404).send("Aucun utilisateur trouvé"); // Gestion du cas où aucun utilisateur n'est trouvé
+            res.status(404).send("Aucun utilisateur trouvé");
         }
     } catch (err) {
         console.error(err.message);
@@ -108,17 +146,15 @@ router.get('/specialites', async (req, res) => {
 });
 
 router.put('/salles/:id', async (req, res) => {
-    const { id } = req.params; // ID de la salle à modifier
+    const { id } = req.params;
     const { num_salle, etage, capacite, nom_specialite } = req.body;
 
     try {
-        // Vérification de l'existence de la spécialité
         const specialiteExist = await pool.query('SELECT id_specialite FROM specialite WHERE nom_specialite = $1', [nom_specialite]);
         if (specialiteExist.rows.length === 0) {
             return res.status(404).json({ message: "La spécialité spécifiée n'existe pas." });
         }
 
-        // Mise à jour de la salle
         const updateSalle = await pool.query(
             'UPDATE salle SET num_salle = $1, etage = $2, capacite = $3, nom_specialite = $4 WHERE id_salle = $5 RETURNING *',
             [num_salle, etage, capacite, nom_specialite, id]
@@ -138,18 +174,16 @@ router.put('/salles/:id', async (req, res) => {
 router.post('/salles', async (req, res) => {
     const { num_salle, etage, capacite, nom_specialite } = req.body;
     try {
-        // Vérification de l'existence de la spécialité
         const specialiteExist = await pool.query('SELECT id_specialite FROM specialite WHERE nom_specialite = $1', [nom_specialite]);
-        
-        // Si la spécialité n'existe pas, renvoyer une erreur
         if (specialiteExist.rows.length === 0) {
             return res.status(404).json({ message: "La spécialité spécifiée n'existe pas." });
         }
 
-        // Insertion de la salle dans la base de données
+        const id_specialite = specialiteExist.rows[0].id_specialite;
+
         const newSalle = await pool.query(
-            'INSERT INTO salle (num_salle, etage, capacite, nom_specialite) VALUES ($1, $2, $3, $4) RETURNING *',
-            [num_salle, etage, capacite, nom_specialite]
+            'INSERT INTO salle (num_salle, etage, capacite, nom_specialite, id_specialite) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [num_salle, etage, capacite, nom_specialite, id_specialite]
         );
         res.status(201).json(newSalle.rows[0]);
     } catch (err) {
@@ -167,9 +201,9 @@ router.get('/Rooms', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
 router.get('/villes', async (req, res) => {
     try {
-        // Sélectionner les noms des villes depuis la table "region"
         const result = await pool.query('SELECT nom_ville FROM region');
         if (result.rows.length > 0) {
             const villes = result.rows.map(row => row.nom_ville);
@@ -182,4 +216,5 @@ router.get('/villes', async (req, res) => {
         res.status(500).send('Erreur du serveur');
     }
 });
+
 export default router;
