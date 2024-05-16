@@ -21,6 +21,7 @@ export default function ProductsView() {
   const [nomSpecialite, setNomSpecialite] = useState("");
   const [salles, setSalles] = useState([]);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     const fetchSpecialites = async () => {
@@ -45,92 +46,150 @@ export default function ProductsView() {
     fetchSalles();
   }, []);
 
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'numSalle':
+        if (!value.trim()) {
+          return 'Ce champ est requis';
+        }
+        break;
+      case 'capacite':
+        if (!value.trim()) {
+          return 'Ce champ est requis';
+        }
+        break;
+      case 'etage':
+        if (!value) {
+          return 'Ce champ est requis';
+        }
+        break;
+      case 'nomSpecialite':
+        if (!value) {
+          return 'Ce champ est requis';
+        }
+        break;
+      default:
+        return '';
+    }
+    return '';
+  };
+
   const handleNumSalleChange = (event) => {
-    setNumSalle(event.target.value);
+    const { value } = event.target;
+    setNumSalle(value);
   };
 
   const handleCapaciteChange = (event) => {
-    setCapacite(event.target.value);
+    const { value } = event.target;
+    setCapacite(value);
   };
 
   const handleEtageChange = (event) => {
-    setEtage(event.target.value);
+    const { value } = event.target;
+    setEtage(value);
   };
 
   const handleSpecialiteChange = (event) => {
-    setNomSpecialite(event.target.value);
+    const { value } = event.target;
+    setNomSpecialite(value);
+  };
+
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+    const error = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
   };
 
   const handleAdd = async () => {
+    const formData = {
+      numSalle,
+      capacite,
+      etage,
+      nomSpecialite
+    };
+
+    const errors = {};
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key]);
+      if (error) {
+        errors[key] = error;
+      }
+    });
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      try {
+        const response = await axios.post("http://localhost:3000/auth/salles", {
+          num_salle: numSalle,
+          capacite,
+          etage,
+          nom_specialite: nomSpecialite
+        });
+
+        setSalles([...salles, response.data]);
+
+        setNumSalle("");
+        setCapacite("");
+        setEtage("");
+        setNomSpecialite("");
+      } catch (error) {
+        console.error("Erreur lors de l'ajout de la salle:", error);
+      }
+    }
+  };
+
+  const handleUpdate = async () => {
     try {
-      const response = await axios.post("http://localhost:3000/auth/salles", {
+      const salleToUpdate = salles[selectedRowIndex];
+      if (!salleToUpdate) {
+        console.error("La salle à modifier n'a pas été trouvée.");
+        return;
+      }
+      const { id } = salleToUpdate;
+
+      await axios.put(`http://localhost:3000/auth/salles/${id}`, {
         num_salle: numSalle,
         capacite,
         etage,
         nom_specialite: nomSpecialite
       });
 
-      setSalles([...salles, response.data]);
+      const updatedSalles = [...salles];
+      updatedSalles[selectedRowIndex] = {
+        ...updatedSalles[selectedRowIndex],
+        num_salle: numSalle,
+        capacite,
+        etage,
+        nom_specialite: nomSpecialite
+      };
 
+      setSalles(updatedSalles);
+
+      setSelectedRowIndex(null);
       setNumSalle("");
       setCapacite("");
       setEtage("");
       setNomSpecialite("");
     } catch (error) {
-      console.error("Erreur lors de l'ajout de la salle:", error);
+      console.error("Erreur lors de la modification de la salle:", error);
     }
   };
 
-  const handleUpdate = async () => {
-  try {
-    const salleToUpdate = salles[selectedRowIndex];
-    if (!salleToUpdate) {
-      console.error("La salle à modifier n'a pas été trouvée.");
-      return;
+  const handleEdit = (index) => {
+    const salleToEdit = salles[index];
+    if (salleToEdit) {
+      const { num_salle,capacite: edcapacite,etage: edetage, nom_specialite } = salleToEdit;
+      setNumSalle(num_salle);
+      setCapacite(edcapacite);
+      setEtage(edetage);
+      setNomSpecialite(nom_specialite);
+      setSelectedRowIndex(index);
     }
-    const { id } = salleToUpdate;
-
-    await axios.put(`http://localhost:3000/auth/salles/${id}`, {
-      num_salle: numSalle,
-      capacite,
-      etage,
-      nom_specialite: nomSpecialite
-    });
-
-    const updatedSalles = [...salles];
-    updatedSalles[selectedRowIndex] = {
-      ...updatedSalles[selectedRowIndex],
-      num_salle: numSalle,
-      capacite,
-       etage,
-      nom_specialite: nomSpecialite
-    };
-
-    setSalles(updatedSalles);
-
-    setSelectedRowIndex(null);
-    setNumSalle("");
-    setCapacite("");
-    setEtage("");
-    setNomSpecialite("");
-  } catch (error) {
-    console.error("Erreur lors de la modification de la salle:", error);
-  }
-};
-
-  
-const handleEdit = (index) => {
-  const salleToEdit = salles[index];
-  if (salleToEdit) {
-    const { num_salle,capacite: edcapacite,etage: edetage, nom_specialite } = salleToEdit;
-    setNumSalle(num_salle);
-    setCapacite(edcapacite);
-    setEtage(edetage);
-    setNomSpecialite(nom_specialite);
-    setSelectedRowIndex(index);
-  }
-};
-  
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -153,9 +212,13 @@ const handleEdit = (index) => {
             <TextField
               label="Numéro de salle"
               value={numSalle}
+              onBlur={handleBlur}
               onChange={handleNumSalleChange}
               fullWidth
               type="number"
+              error={!!formErrors.numSalle}
+              helperText={formErrors.numSalle}
+              name="numSalle"
             />
           </Grid>
 
@@ -163,9 +226,13 @@ const handleEdit = (index) => {
             <TextField
               label="Capacité de la salle"
               value={capacite}
+              onBlur={handleBlur}
               onChange={handleCapaciteChange}
               type="number"
               fullWidth
+              error={!!formErrors.capacite}
+              helperText={formErrors.capacite}
+              name="capacite"
             />
           </Grid>
 
@@ -174,8 +241,12 @@ const handleEdit = (index) => {
               select
               label="Étage"
               value={etage}
+              onBlur={handleBlur}
               onChange={handleEtageChange}
               fullWidth
+              error={!!formErrors.etage}
+              helperText={formErrors.etage}
+              name="etage"
             >
               {[1, 2, 3].map((floor) => (
                 <MenuItem key={floor} value={floor}>
@@ -190,8 +261,12 @@ const handleEdit = (index) => {
               select
               label="Spécialité"
               value={nomSpecialite}
+              onBlur={handleBlur}
               onChange={handleSpecialiteChange}
               fullWidth
+              error={!!formErrors.nomSpecialite}
+              helperText={formErrors.nomSpecialite}
+              name="nomSpecialite"
             >
               {specialites.map((specialiteItem) => (
                 <MenuItem key={specialiteItem.id} value={specialiteItem.nom_specialite}>
@@ -212,7 +287,6 @@ const handleEdit = (index) => {
               variant="contained"
               color="primary"
               fullWidth
-             
               onClick={handleUpdate}
             >
               Modifier

@@ -1,5 +1,6 @@
+import axios from 'axios';
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -10,12 +11,9 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
-import PersonAddIcon from '@mui/icons-material/PersonAdd'; // Utiliser PersonAddIcon pour représenter un nouvel utilisateur
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import TablePagination from '@mui/material/TablePagination';
-
-import { users } from 'src/_mock/user';
 
 import Scrollbar from 'src/components/scrollbar';
 
@@ -26,19 +24,76 @@ import TableEmptyRows from '../table-empty-rows';
 import UserTableToolbar from '../user-table-toolbar';
 import { emptyRows, applyFilter, getComparator } from '../utils';
 
-function NewUserForm({ onClose }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [cnie, setCnie] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
-  const [status, setStatus] = useState('active'); // Définir le statut par défaut sur "actif"
+const validateField = (name, value) => {
+  if (!value.trim()) {
+    return 'Ce champ est requis';
+  }
+  return '';
+};
 
-  const handleSubmit = (event) => {
+function NewUserForm({ onClose }) {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    cine: '',
+    email: '',
+    password: '',
+    role: '',
+    status: 'active'
+  });
+  const [formErrors, setFormErrors] = useState({});
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
+
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+    const error = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    // Enregistrement des données, ici vous pouvez ajouter le traitement nécessaire
-    onClose();
+
+    const errors = {};
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key]);
+      if (error) {
+        errors[key] = error;
+      }
+    });
+    setFormErrors(errors);
+    if (Object.keys(errors).length === 0) {
+      console.log('Form is valid, proceed with submitting:', formData);
+      try {
+        const response = await axios.post('http://localhost:3000/auth/utilisateurs', formData);
+        console.log('User created:', response.data);
+        onClose();
+      } catch (error) {
+        console.error('Error creating user:', error.response ? error.response.data : error.message);
+      }
+    }
+  };
+
+  const handleReset = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      cine: '',
+      email: '',
+      password: '',
+      role: '',
+      status: 'active'
+    });
+    setFormErrors({});
   };
 
   return (
@@ -48,82 +103,99 @@ function NewUserForm({ onClose }) {
           <TextField
             fullWidth
             type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
             label="First Name"
+            name="firstName"
+            onBlur={handleBlur}
+            value={formData.firstName}
+            onChange={handleChange}
+            error={!!formErrors.firstName}
+            helperText={formErrors.firstName}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
             type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
             label="Last Name"
+            name="lastName"
+            onBlur={handleBlur}
+            value={formData.lastName}
+            onChange={handleChange}
+            error={!!formErrors.lastName}
+            helperText={formErrors.lastName}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             fullWidth
             type="text"
-            value={cnie}
-            onChange={(e) => setCnie(e.target.value)}
-            label="CNIE"
+            label="CINE"
+            name="cine"
+            onBlur={handleBlur}
+            value={formData.cine}
+            onChange={handleChange}
+            error={!!formErrors.cine}
+            helperText={formErrors.cine}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             fullWidth
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             label="Email"
+            name="email"
+            onBlur={handleBlur}
+            value={formData.email}
+            onChange={handleChange}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             fullWidth
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             label="Password"
+            name="password"
+            onBlur={handleBlur}
+            value={formData.password}
+            onChange={handleChange}
+            error={!!formErrors.password}
+            helperText={formErrors.password}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             fullWidth
             type="text"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
             label="Role"
+            name="role"
+            onBlur={handleBlur}
+            value={formData.role}
+            onChange={handleChange}
+            error={!!formErrors.role}
+            helperText={formErrors.role}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             fullWidth
-            select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            disabled
             label="Status"
-            SelectProps={{ native: true }}
-          >
-            <option value="active">Active</option>
-          </TextField>
+            value="Active"
+          />
         </Grid>
-       
-        <Grid item xs={6}>
-          <Button type="submit" variant="contained" color="primary">
-            Valider
-          </Button>
+        <Grid item xs={12} sm={6}>
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <Button type="button" variant="outlined" color="secondary" onClick={handleReset}>
+              Clear
+            </Button>
+            <Button type="submit" variant="contained" color="primary">
+              Next
+            </Button>
+          </Stack>
         </Grid>
-        <Grid item xs={6}>
-        <Button  onClick={onClose} variant="contained" color="primary" sx={{ bgcolor: 'grey.500', color: 'white' }}>
-           Annuler
-          </Button>
-         
-        </Grid>
-        </Grid>
-
+      </Grid>
     </form>
   );
 }
@@ -131,9 +203,62 @@ function NewUserForm({ onClose }) {
 NewUserForm.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
-
 export default function UserPage() {
   const [isNewUserFormOpen, setIsNewUserFormOpen] = useState(false);
+  const [usersData, setUsersData] = useState([]);
+  const [page, setPage] = useState(0);
+  const [order, setOrder] = useState('asc');
+  const [selected, setSelected] = useState([]);
+  const [orderBy, setOrderBy] = useState('name');
+  const [filterName, setFilterName] = useState('');
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/auth/getUsers");
+        setUsersData(response.data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleDelete = async (cine) => {
+    try {
+      // Envoi de la requête de suppression à l'API
+      await axios.delete(`http://localhost:3000/auth/utilisateurs/${cine}`);
+
+      // Mettre à jour l'état local pour supprimer l'utilisateur du tableau
+      setUsersData(usersData.filter(user => user.cine !== cine));
+    } catch (error) {
+      console.error('Erreur lors de la suppression de l\'utilisateur :', error);
+    }
+  };
+  const handleEdit = async (currentStatus, cine) => {
+    try {
+      // Basculer automatiquement le statut
+      const newStatus = currentStatus === 'active' ? 'banned' : 'active';
+
+      // Envoi de la requête de mise à jour à l'API
+      await axios.put(`http://localhost:3000/auth/utilisateurs/${cine}`, { statut: newStatus });
+
+      // Mettre à jour l'état local pour refléter le nouveau statut
+      const updatedUsers = usersData.map(user => {
+        if (user.cine === cine) {
+          return { ...user, statut: newStatus };
+        }
+        return user;
+      });
+      setUsersData(updatedUsers);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut de l\'utilisateur :', error);
+    }
+  };
+
+
+
 
   const handleOpenNewUserForm = () => {
     setIsNewUserFormOpen(true);
@@ -142,13 +267,6 @@ export default function UserPage() {
   const handleCloseNewUserForm = () => {
     setIsNewUserFormOpen(false);
   };
-
-  const [page, setPage] = useState(0);
-  const [order, setOrder] = useState('asc');
-  const [selected, setSelected] = useState([]);
-  const [orderBy, setOrderBy] = useState('name');
-  const [filterName, setFilterName] = useState('');
-  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleSort = (event, id) => {
     const isAsc = orderBy === id && order === 'asc';
@@ -160,7 +278,7 @@ export default function UserPage() {
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = users.map((n) => n.name);
+      const newSelecteds = usersData.map((user) => user.name);
       setSelected(newSelecteds);
       return;
     }
@@ -200,22 +318,22 @@ export default function UserPage() {
   };
 
   const dataFiltered = applyFilter({
-    inputData: users,
+    inputData: usersData,
     comparator: getComparator(order, orderBy),
     filterName,
   });
+
 
   const notFound = !dataFiltered.length && !!filterName;
 
   return (
     <Container>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-        <Typography variant="h4">Users</Typography>
-
-        <IconButton onClick={handleOpenNewUserForm}>
-          <PersonAddIcon /> {/* Utiliser l'icône PersonAddIcon pour représenter un nouvel utilisateur */}
-        </IconButton>
-      </Stack>
+  <Typography variant="h4">Users</Typography>
+  <Button onClick={handleOpenNewUserForm} startIcon={<PersonAddIcon />} variant="text">
+    New User
+  </Button>
+</Stack>
 
       {isNewUserFormOpen && (
         <Card>
@@ -231,55 +349,55 @@ export default function UserPage() {
             filterName={filterName}
             onFilterName={handleFilterByName}
           />
-
           <Scrollbar>
             <TableContainer sx={{ overflow: 'unset' }}>
               <Table sx={{ minWidth: 800 }}>
                 <UserTableHead
                   order={order}
                   orderBy={orderBy}
-                  rowCount={users.length}
+                  rowCount={usersData.length}
                   numSelected={selected.length}
                   onRequestSort={handleSort}
                   onSelectAllClick={handleSelectAllClick}
                   headLabel={[
                     { id: 'name', label: 'Name' },
-                    { id: 'company', label: 'Email' },
+                    { id: 'company', label: 'CINE' },
+                    { id: 'email', label: 'Email' },
                     { id: 'role', label: 'Role' },
                     { id: 'status', label: 'Status' },
+
                     { id: '' },
                   ]}
                 />
                 <TableBody>
                   {dataFiltered
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((row) => (
+                    .map((user) => (
                       <UserTableRow
-                        key={row.id}
-                        name={row.name}
-                        role={row.role}
-                        status={row.status}
-                        company={row.company}
-                        avatarUrl={row.avatarUrl}
-                        handleClick={(event) => handleClick(event, row.name)}
+                        key={user.id}
+                        name={user.nom}
+                        role={user.role}
+                        status={user.statut}
+                        company={user.email}
+                        avatarUrl={user.cine} // Change ici
+                        handleClick={(event) => handleClick(event, user.name)}
+                        handleDelete={() => handleDelete(user.cine)}
+                        handleEdit={() => handleEdit(user.statut, user.cine)}  // 
                       />
                     ))}
-
                   <TableEmptyRows
                     height={77}
-                    emptyRows={emptyRows(page, rowsPerPage, users.length)}
+                    emptyRows={emptyRows(page, rowsPerPage, usersData.length)}
                   />
-
                   {notFound && <TableNoData query={filterName} />}
                 </TableBody>
               </Table>
             </TableContainer>
           </Scrollbar>
-
           <TablePagination
             page={page}
             component="div"
-            count={users.length}
+            count={usersData.length}
             rowsPerPage={rowsPerPage}
             onPageChange={handleChangePage}
             rowsPerPageOptions={[5, 10, 25]}

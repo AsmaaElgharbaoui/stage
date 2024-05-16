@@ -6,11 +6,11 @@ const router = express.Router();
 
 
 router.post('/patients', async (req, res) => {
-    const { CINE, NOM, PRENOM, DATE_NAISSANCE, TELEPHON, SEXE, ADRESSE, EMAIL } = req.body;
+    const { cine, email, firstName, lastName, birthdate, age, region, address, phoneNumber, gender } = req.body;
     try {
         const newPatient = await pool.query(
-            'INSERT INTO patient (CINE, NOM, PRENOM, DATE_NAISSANCE, TELEPHON, SEXE, ADRESSE, EMAIL) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-            [CINE, NOM, PRENOM, DATE_NAISSANCE, TELEPHON, SEXE, ADRESSE, EMAIL]
+            'INSERT INTO patient (cine, email, prenom, nom, date_naissance, age, ville, adresse, telephon, sexe) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+            [cine, email, firstName, lastName, birthdate, age, region, address, phoneNumber, gender]
         );
         res.status(201).json(newPatient.rows[0]);
     } catch (err) {
@@ -18,6 +18,7 @@ router.post('/patients', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
 
 router.post('/utilisateurs', async (req, res) => {
     const { cine, nom, prenom, email, password, statut, role } = req.body;
@@ -39,6 +40,47 @@ router.post('/utilisateurs', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+router.put('/utilisateurs/:cine', async (req, res) => {
+    const { cine } = req.params;
+    const { statut } = req.body; // Seul le statut est mis à jour ici, vous pouvez ajouter d'autres champs si nécessaire
+    try {
+        // Mise à jour du statut de l'utilisateur dans la base de données
+        const updatedUser = await pool.query(
+            'UPDATE utilisateur SET statut = $1 WHERE cine = $2 RETURNING *',
+            [statut, cine]
+        );
+
+        // Vérification si l'utilisateur a été mis à jour
+        if (updatedUser.rows.length === 0) {
+            return res.status(404).send("Utilisateur non trouvé");
+        }
+
+        // Réponse avec l'utilisateur mis à jour
+        res.status(200).json(updatedUser.rows[0]);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+router.delete('/utilisateurs/:cine', async (req, res) => {
+    const { cine } = req.params;
+    try {
+        const deletedUser = await pool.query(
+            'DELETE FROM utilisateur WHERE cine = $1 RETURNING *',
+            [cine]
+        );
+        if (deletedUser.rows.length === 0) {
+            return res.status(404).send("Utilisateur non trouvé");
+        }
+        res.status(200).json({ message: "Utilisateur supprimé avec succès" });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
+
 router.get('/getUsers', async (req, res) => {
     try {
         const result = await pool.query(
@@ -125,5 +167,19 @@ router.get('/Rooms', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
-
+router.get('/villes', async (req, res) => {
+    try {
+        // Sélectionner les noms des villes depuis la table "region"
+        const result = await pool.query('SELECT nom_ville FROM region');
+        if (result.rows.length > 0) {
+            const villes = result.rows.map(row => row.nom_ville);
+            res.status(200).json(villes);
+        } else {
+            res.status(404).send("Aucune ville trouvée dans la table region");
+        }
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Erreur du serveur');
+    }
+});
 export default router;

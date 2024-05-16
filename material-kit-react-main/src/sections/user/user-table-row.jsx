@@ -14,8 +14,6 @@ import IconButton from '@mui/material/IconButton';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-// ----------------------------------------------------------------------
-
 export default function UserTableRow({
   selected,
   name,
@@ -24,6 +22,8 @@ export default function UserTableRow({
   role,
   status,
   handleClick,
+  handleEdit,
+  handleDelete,
 }) {
   const [open, setOpen] = useState(null);
 
@@ -34,6 +34,7 @@ export default function UserTableRow({
   const handleCloseMenu = () => {
     setOpen(null);
   };
+
 
   return (
     <>
@@ -50,7 +51,8 @@ export default function UserTableRow({
             </Typography>
           </Stack>
         </TableCell>
-
+             
+        <TableCell>{avatarUrl}</TableCell>
         <TableCell>{company}</TableCell>
 
         <TableCell>{role}</TableCell>
@@ -76,12 +78,13 @@ export default function UserTableRow({
           sx: { width: 140 },
         }}
       >
-        <MenuItem onClick={handleCloseMenu}>
-          <Iconify icon="eva:edit-fill" sx={{ mr: 2 }} />
-          Edit
-        </MenuItem>
+        <MenuItem onClick={() => { handleEdit(); handleCloseMenu(); }}>
+  <Iconify icon="eva:edit-fill" sx={{ mr: 2 }} />
+  Edit
+</MenuItem>
 
-        <MenuItem onClick={handleCloseMenu} sx={{ color: 'error.main' }}>
+
+        <MenuItem onClick={() => { handleDelete(); handleCloseMenu(); }} sx={{ color: 'error.main' }}>
           <Iconify icon="eva:trash-2-outline" sx={{ mr: 2 }} />
           Delete
         </MenuItem>
@@ -94,6 +97,8 @@ UserTableRow.propTypes = {
   avatarUrl: PropTypes.any,
   company: PropTypes.any,
   handleClick: PropTypes.func,
+  handleEdit: PropTypes.func,
+  handleDelete: PropTypes.func,
   name: PropTypes.any,
   role: PropTypes.any,
   selected: PropTypes.any,
