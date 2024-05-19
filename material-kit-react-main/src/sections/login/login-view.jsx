@@ -14,6 +14,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { useRouter } from 'src/routes/hooks';
 
 import { bgGradient } from 'src/theme/css';
+import { account } from 'src/_mock/account';
 
 import Logo from 'src/components/logo';
 import Iconify from 'src/components/iconify';
@@ -28,10 +29,10 @@ export default function LoginView() {
   const handleClick = async () => {
     setLoading(true);
     setError('');
-
+  
     const email = document.querySelector('[name="email"]').value;
     const password = document.querySelector('[name="password"]').value;
-
+  
     try {
       const response = await fetch('http://localhost:3000/auth/login', {
         method: 'POST',
@@ -40,20 +41,31 @@ export default function LoginView() {
         },
         body: JSON.stringify({ email, password }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Mot de passe incorrect ou utilisateur non trouvé');
       }
+  
+      const data = await response.json(); 
+      account.displayName = data.displayName;
+      account.email = data.email;
+      
+      if (data.role === 'admin') {
 
-      // Utiliser le router de Next.js pour rediriger vers http://localhost:3030/
-      router.push('/app');
-
+        router.push('/app');
+      } else if (data.role === 'secretaire') {
+        router.push('/user');
+      } else {
+        throw new Error('Rôle utilisateur non géré');
+      }
+  
     } catch (catchError) {
       setError(catchError.message);
     } finally {
       setLoading(false);
     }
   };
+  
 
   const renderForm = (
     <>

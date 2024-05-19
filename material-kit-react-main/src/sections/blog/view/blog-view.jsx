@@ -1,9 +1,10 @@
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import Stack from '@mui/material/Stack';
 import Radio from '@mui/material/Radio';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Container from '@mui/material/Container';
@@ -39,11 +40,15 @@ export default function BlogView() {
     speciality: '',
     room: '',
     patient: '',
-    appointmentDate: ''
+    appointment_date: ''
   });
   const [formErrors, setFormErrors] = useState({});
   const [villes, setVilles] = useState([]);
+  const [specialities, setSpecialities] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [step, setStep] = useState(1);
+  const [ setAppointments] = useState([]);
+
 
   useEffect(() => {
     const fetchVilles = async () => {
@@ -58,8 +63,30 @@ export default function BlogView() {
         console.error('Could not fetch the cities:', error);
       }
     };
+
+    const fetchSpecialities = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/specialites');
+        console.log('Specialities:', response.data); // Log the specialities
+        setSpecialities(response.data);
+      } catch (error) {
+        console.error('Could not fetch the specialities:', error);
+      }
+    };
+
     fetchVilles();
+    fetchSpecialities();
   }, []);
+
+  const fetchRooms = async (speciality) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/auth/salle?nom_specialite=${speciality}`);
+      console.log('Rooms:', response.data); // Log the rooms
+      setRooms(response.data);
+    } catch (error) {
+      console.error('Could not fetch the rooms:', error);
+    }
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -67,6 +94,10 @@ export default function BlogView() {
       ...prev,
       [name]: value
     }));
+
+    if (name === 'speciality') {
+      fetchRooms(value);
+    }
   };
 
   const handleBlur = (event) => {
@@ -114,17 +145,14 @@ export default function BlogView() {
 
     if (Object.keys(errors).length === 0) {
       if (step === 1) {
+        // Stockez la valeur de "cine" dans "patient"
+        setFormData(prev => ({
+          ...prev,
+          patient: prev.cine
+        }));
         setStep(2);
-      } else {
-        // Handle final form submission
         try {
-          const response = await fetch('http://localhost:3000/auth/patients', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-          });
+          const response = await axios.post('http://localhost:3000/auth/patients', formData);
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -135,6 +163,9 @@ export default function BlogView() {
           console.error('Error while submitting form:', error);
           // Afficher un message d'erreur à l'utilisateur
         }
+      } else {
+        // Handle final form submission
+       
       }
     } else {
       console.log('Errors:', errors);
@@ -161,6 +192,19 @@ export default function BlogView() {
     return age.toString();
   };
 
+  const addAppointment = async () => {
+    try {
+      const response = await axios.post('http://localhost:3000/auth/rdv', formData);
+      console.log('Appointment added:', response.data);
+      // Mettre à jour la liste des rendez-vous avec le nouveau rendez-vous ajouté
+      setAppointments(prevAppointments => [...prevAppointments, response.data]);
+      // Autres actions après l'ajout du rendez-vous, par exemple, afficher un message de succès
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+      // Afficher un message d'erreur à l'utilisateur
+    }
+  };
+  
   const handleReset = () => {
     setFormData({
       cine: '',
@@ -176,7 +220,7 @@ export default function BlogView() {
       speciality: '',
       room: '',
       patient: '',
-      appointmentDate: ''
+      appointment_date: ''
     });
     setFormErrors({});
     setStep(1);
@@ -191,7 +235,7 @@ export default function BlogView() {
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
         <Typography variant="h4">Appointments</Typography>
       </Stack>
-      <Box component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+      <Box component="form" noValidate autoComplete="off" >
         {step === 1 ? (
           <>
             <Typography variant="h6" gutterBottom>
@@ -399,9 +443,10 @@ export default function BlogView() {
               <Button type="button" variant="outlined" color="secondary" onClick={handleReset}>
                 Clear
               </Button>
-              <Button type="submit" variant="contained" color="primary">
-                Next
+              <Button  onClick={handleSubmit} type="submit" variant="contained" color="primary">
+                  Next
               </Button>
+
             </Stack>
           </>
         ) : (
@@ -410,6 +455,7 @@ export default function BlogView() {
               Appointment Details
             </Typography>
             <TextField
+              select
               fullWidth
               name="speciality"
               label="Speciality *"
@@ -427,8 +473,15 @@ export default function BlogView() {
                   </InputAdornment>
                 ),
               }}
-            />
+            >
+              {specialities.map((speciality) => (
+                <MenuItem key={speciality.nom_specialite} value={speciality.nom_specialite}>
+                  {speciality.nom_specialite}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
+              select
               fullWidth
               name="room"
               label="Room *"
@@ -446,7 +499,13 @@ export default function BlogView() {
                   </InputAdornment>
                 ),
               }}
-            />
+            >
+              {rooms.map((room) => (
+                <MenuItem key={room.num_salle} value={room.num_salle}>
+                  {room.num_salle}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               fullWidth
               name="patient"
@@ -468,17 +527,17 @@ export default function BlogView() {
             />
             <TextField
               fullWidth
-              name="appointmentDate"
+              name="appointment_date"
               type="datetime-local"
               label="Date of Appointment *"
               variant="outlined"
               margin="normal"
               onChange={handleChange}
               onBlur={handleBlur}
-              value={formData.appointmentDate}
+              value={formData.appointment_date}
               InputLabelProps={{ shrink: true }}
-              error={!!formErrors.appointmentDate}
-              helperText={formErrors.appointmentDate}
+              error={!!formErrors.appointment_date}
+              helperText={formErrors.appointment_date}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -491,7 +550,7 @@ export default function BlogView() {
               <Button type="button" variant="outlined" color="secondary" onClick={handlePrevious}>
                 Previous
               </Button>
-              <Button type="submit" variant="contained" color="primary">
+              <Button  onClick={addAppointment} type="submit" variant="contained" color="primary">
                 Save
               </Button>
             </Stack>

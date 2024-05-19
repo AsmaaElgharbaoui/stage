@@ -149,9 +149,9 @@ export default function ProductsView() {
         console.error("La salle à modifier n'a pas été trouvée.");
         return;
       }
-      const { id } = salleToUpdate;
+      const { num_salle } = salleToUpdate;
 
-      await axios.put(`http://localhost:3000/auth/salles/${id}`, {
+      await axios.put(`http://localhost:3000/auth/salles/${num_salle}`, {
         num_salle: numSalle,
         capacite,
         etage,
@@ -182,7 +182,7 @@ export default function ProductsView() {
   const handleEdit = (index) => {
     const salleToEdit = salles[index];
     if (salleToEdit) {
-      const { num_salle,capacite: edcapacite,etage: edetage, nom_specialite } = salleToEdit;
+      const { num_salle, capacite: edcapacite, etage: edetage, nom_specialite } = salleToEdit;
       setNumSalle(num_salle);
       setCapacite(edcapacite);
       setEtage(edetage);
@@ -191,10 +191,10 @@ export default function ProductsView() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (num_salle) => {
     try {
-      await axios.delete(`http://localhost:3000/auth/salles/${id}`);
-      setSalles(salles.filter(salle => salle.id !== id));
+      await axios.delete(`http://localhost:3000/auth/salles/${num_salle}`);
+      setSalles(salles.filter(salle => salle.num_salle !== num_salle));
     } catch (error) {
       console.error("Erreur lors de la suppression de la salle:", error);
     }
@@ -308,7 +308,7 @@ export default function ProductsView() {
           </TableHead>
           <TableBody>
             {salles.map((salle, index) => (
-              <TableRow key={salle.id}>
+              <TableRow key={salle.num_salle}>
                 <TableCell>{salle.num_salle}</TableCell>
                 <TableCell>{salle.capacite}</TableCell>
                 <TableCell>{salle.etage}</TableCell>
@@ -317,7 +317,7 @@ export default function ProductsView() {
                   <Button variant="outlined" color="primary" onClick={() => handleEdit(index)}>
                     Modifier
                   </Button>
-                  <Button variant="outlined" color="secondary" onClick={() => handleDelete(salle.id)}>
+                  <Button variant="outlined" color="secondary" onClick={() => handleDelete(salle.num_salle)}>
                     Supprimer
                   </Button>
                 </TableCell>

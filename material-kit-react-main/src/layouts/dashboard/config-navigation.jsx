@@ -7,20 +7,16 @@ const icon = (name) => (
 );
 
 const navConfig = [
+  
   {
-    title: 'login',
-    path: '/login',
-    icon: icon('ic_lock'),
+    title: 'user',
+    path: '/',
+    icon: icon('ic_user'),
   },
   {
     title: 'dashboard',
-    path: '/',
-    icon: icon('ic_analytics'),
-  },
-  {
-    title: 'user',
     path: '/user',
-    icon: icon('ic_user'),
+    icon: icon('ic_analytics'),
   },
   {
     title: 'Room',
@@ -31,6 +27,11 @@ const navConfig = [
     title: 'Appointments',
     path: '/blog',
     icon: icon('ic_blog'),
+  },
+  {
+    title: 'logout',
+    path: '/',
+    icon: icon('ic_lock'),
   },
 ];
 

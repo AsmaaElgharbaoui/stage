@@ -2,6 +2,10 @@ import axios from 'axios';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
+import Select from '@mui/material/Select'; // Importer Select
+import MenuItem from '@mui/material/MenuItem'; // Importer MenuItem
+import FormControl from '@mui/material/FormControl'; // Importer FormControl
+import InputLabel from '@mui/material/InputLabel'; // Importer InputLabel
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -165,17 +169,20 @@ function NewUserForm({ onClose }) {
           />
         </Grid>
         <Grid item xs={12}>
-          <TextField
-            fullWidth
-            type="text"
-            label="Role"
-            name="role"
-            onBlur={handleBlur}
-            value={formData.role}
-            onChange={handleChange}
-            error={!!formErrors.role}
-            helperText={formErrors.role}
-          />
+          <FormControl fullWidth error={!!formErrors.role}>
+            <InputLabel>Role</InputLabel>
+            <Select
+              label="Role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              onBlur={handleBlur}
+            >
+              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="secretaire">Secrétaire</MenuItem>
+            </Select>
+            {formErrors.role && <Typography variant="caption" color="error">{formErrors.role}</Typography>}
+          </FormControl>
         </Grid>
         <Grid item xs={12}>
           <TextField
