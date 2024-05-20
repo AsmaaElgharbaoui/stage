@@ -62,7 +62,7 @@ export default function Router() {
     },
     {
       path: '*', // Catch all other paths
-      element: <Navigate to="/404" replace />,
+      element: <Navigate to="/" replace />,
     },
   ]);
 

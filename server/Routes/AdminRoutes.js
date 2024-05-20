@@ -76,6 +76,16 @@ router.post('/patients', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+router.get('/patients/count', async (req, res) => {
+    try {
+        const totalCount = await pool.query('SELECT COUNT(*) FROM patient');
+        res.status(200).json({ count: parseInt(totalCount.rows[0].count) });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
 
 router.get('/patients/names', async (req, res) => {
     try {
@@ -111,6 +121,17 @@ router.post('/utilisateurs', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+router.get('/utilisateurs/total', async (req, res) => {
+    const TOTAL_UTILISATEURS_QUERY = 'SELECT COUNT(*) AS total_utilisateurs FROM utilisateur';
+    try {
+        const { rows } = await pool.query(TOTAL_UTILISATEURS_QUERY);
+        const totalUtilisateurs = rows[0].total_utilisateurs;
+        res.status(200).json({ total_utilisateurs: totalUtilisateurs });
+    } catch (error) {
+        console.error('Erreur lors du calcul du total des utilisateurs:', error);
+        res.status(500).json({ error: 'Une erreur s\'est produite lors du calcul du total des utilisateurs' });
+    }
+});
 
 
 
@@ -125,6 +146,19 @@ router.post('/rdv', async (req, res) => {
       res.status(500).json({ error: 'Une erreur s\'est produite lors de l\'insertion du RDV' });
     }
   });
+
+  router.get('/rdv/total', async (req, res) => {
+    const TOTAL_RDV_QUERY = 'SELECT COUNT(*) AS total_rdv FROM rdv';
+    try {
+        const { rows } = await pool.query(TOTAL_RDV_QUERY);
+        const totalRdv = rows[0].total_rdv;
+        res.status(200).json({ total_rdv: totalRdv });
+    } catch (error) {
+        console.error('Erreur lors du calcul du total des RDV:', error);
+        res.status(500).json({ error: 'Une erreur s\'est produite lors du calcul du total des RDV' });
+    }
+});
+
 
 
 router.put('/utilisateurs/:cine', async (req, res) => {
@@ -258,6 +292,18 @@ router.post('/salles', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+router.get('/salles/total', async (req, res) => {
+    const TOTAL_SALLES_QUERY = 'SELECT COUNT(*) AS total_salles FROM salle';
+    try {
+        const { rows } = await pool.query(TOTAL_SALLES_QUERY);
+        const totalSalles = rows[0].total_salles;
+        res.status(200).json({ total_salles: totalSalles });
+    } catch (error) {
+        console.error('Erreur lors du calcul du nombre total de salles:', error);
+        res.status(500).json({ error: 'Une erreur s\'est produite lors du calcul du nombre total de salles' });
+    }
+});
+
 router.get('/villes', async (req, res) => {
     try {
         const result = await pool.query('SELECT nom_ville FROM region');
@@ -293,6 +339,17 @@ router.get('/salle', async (req, res) => {
         res.status(500).send('Server error');
     }
 });
+
+router.get('/Rooms', async (req, res) => {
+    try {
+        const allSalles = await pool.query('SELECT num_salle, etage, capacite, nom_specialite FROM salle');
+        res.status(200).json(allSalles.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+});
+
 
 
 export default router;

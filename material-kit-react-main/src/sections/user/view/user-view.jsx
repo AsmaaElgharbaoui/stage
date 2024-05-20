@@ -37,13 +37,13 @@ const validateField = (name, value) => {
 
 function NewUserForm({ onClose }) {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    prenom: '',
+    nom: '',
     cine: '',
     email: '',
     password: '',
     role: '',
-    status: 'active'
+    statut: 'active'
   });
   const [formErrors, setFormErrors] = useState({});
 
@@ -75,8 +75,8 @@ function NewUserForm({ onClose }) {
       }
     });
     setFormErrors(errors);
+
     if (Object.keys(errors).length === 0) {
-      console.log('Form is valid, proceed with submitting:', formData);
       try {
         const response = await axios.post('http://localhost:3000/auth/utilisateurs', formData);
         console.log('User created:', response.data);
@@ -89,13 +89,13 @@ function NewUserForm({ onClose }) {
 
   const handleReset = () => {
     setFormData({
-      firstName: '',
-      lastName: '',
+      prenom: '',
+      nom: '',
       cine: '',
       email: '',
       password: '',
       role: '',
-      status: 'active'
+      statut: 'active'
     });
     setFormErrors({});
   };
@@ -108,12 +108,12 @@ function NewUserForm({ onClose }) {
             fullWidth
             type="text"
             label="First Name"
-            name="firstName"
+            name="prenom"
             onBlur={handleBlur}
-            value={formData.firstName}
+            value={formData.prenom}
             onChange={handleChange}
-            error={!!formErrors.firstName}
-            helperText={formErrors.firstName}
+            error={!!formErrors.prenom}
+            helperText={formErrors.prenom}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -121,12 +121,12 @@ function NewUserForm({ onClose }) {
             fullWidth
             type="text"
             label="Last Name"
-            name="lastName"
+            name="nom"
             onBlur={handleBlur}
-            value={formData.lastName}
+            value={formData.nom}
             onChange={handleChange}
-            error={!!formErrors.lastName}
-            helperText={formErrors.lastName}
+            error={!!formErrors.nom}
+            helperText={formErrors.nom}
           />
         </Grid>
         <Grid item xs={12}>
@@ -197,7 +197,7 @@ function NewUserForm({ onClose }) {
             <Button type="button" variant="outlined" color="secondary" onClick={handleReset}>
               Clear
             </Button>
-            <Button type="submit" variant="contained" color="primary">
+            <Button onClick={handleSubmit} type="submit" variant="contained" color="primary">
               Next
             </Button>
           </Stack>

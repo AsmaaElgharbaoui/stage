@@ -1,4 +1,6 @@
+import axios from 'axios';
 import { faker } from '@faker-js/faker';
+import React, { useState, useEffect } from 'react';
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -13,26 +15,73 @@ import AppConversionRates from '../app-conversion-rates';
 // ----------------------------------------------------------------------
 
 export default function AppView() {
+  const [totalAppointments, setTotalAppointments] = useState(null);
+  const [totalNewUsers, setTotalNewUsers] = useState(null);
+  const [totalRooms, setTotalRooms] = useState(null);
+  const [totalPatients, setTotalPatients] = useState(null); // Ajoutez le state pour stocker le total des patients
+
+  useEffect(() => {
+    const fetchTotalAppointments = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/rdv/total');
+        setTotalAppointments(response.data.total_rdv);
+      } catch (error) {
+        console.error('Erreur lors de la récupération du total des rendez-vous:', error);
+      }
+    };
+
+    const fetchTotalNewUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/utilisateurs/total');
+        setTotalNewUsers(response.data.total_utilisateurs);
+      } catch (error) {
+        console.error('Erreur lors de la récupération du total des nouveaux utilisateurs:', error);
+      }
+    };
+
+    const fetchTotalRooms = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/salles/total');
+        setTotalRooms(response.data.total_salles);
+      } catch (error) {
+        console.error('Erreur lors de la récupération du total des salles:', error);
+      }
+    };
+
+    const fetchTotalPatients = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/auth/patients/count'); // Faites une requête GET à votre API pour récupérer le total des patients
+        setTotalPatients(response.data.count); // Mettez à jour le state avec le total des patients récupéré
+      } catch (error) {
+        console.error('Erreur lors de la récupération du total des patients:', error);
+      }
+    };
+
+    fetchTotalAppointments();
+    fetchTotalNewUsers();
+    fetchTotalRooms();
+    fetchTotalPatients(); // Appelez la fonction pour récupérer le total des patients au chargement du composant
+  }, []);
+
   return (
     <Container maxWidth="xl">
       <Typography variant="h4" sx={{ mb: 5 }}>
         Hi, Welcome back 👋
       </Typography>
-
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Weekly Sales"
-            total={714000}
+            title="Appointments"
+            total={totalAppointments !== null ? totalAppointments : 'Loading...'} // Affichez le total des rendez-vous s'il est disponible, sinon affichez "Loading..."
             color="success"
-            icon={<img alt="icon" src="/assets/icons/glass/ic_glass_bag.png" />}
+            icon={<img alt="icon" src="/assets/icons/glass/ic_glass_message.png" />}
           />
         </Grid>
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
             title="New Users"
-            total={1352831}
+            total={totalNewUsers !== null ? totalNewUsers : 'Loading...'} // Affichez le total des nouveaux utilisateurs s'il est disponible, sinon affichez "Loading..."
             color="info"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_users.png" />}
           />
@@ -40,8 +89,8 @@ export default function AppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Item Orders"
-            total={1723315}
+            title="Rooms"
+            total={totalRooms !== null ? totalRooms : 'Loading...'} // Affichez le total des salles s'il est disponible, sinon affichez "Loading..."
             color="warning"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_buy.png" />}
           />
@@ -49,10 +98,10 @@ export default function AppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Bug Reports"
-            total={234}
+            title="Patients" // Affichez le titre comme "Patients"
+            total={totalPatients !== null ? totalPatients : 'Loading...'} // Affichez le total des patients s'il est disponible, sinon affichez "Loading..."
             color="error"
-            icon={<img alt="icon" src="/assets/icons/glass/ic_glass_message.png" />}
+            icon={<img alt="icon" src="/assets/icons/glass/ic_glass_users.png" />}
           />
         </Grid>
 

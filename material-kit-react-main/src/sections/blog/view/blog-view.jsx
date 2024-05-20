@@ -18,12 +18,23 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import Iconify from 'src/components/iconify';
 
-const validateField = (name, value) => {
-  if (!value.trim()) {
-    return 'Ce champ est requis';
-  }
-  return '';
-};
+import {
+  validateAge,
+  validateCine,
+  validateRoom,
+  validateEmail,
+  validateGender,
+  validateAddress,
+  validatePatient,
+  validateLastName,
+  validateBirthdate,
+  validateFirstName,
+  validateSpeciality,
+  validatePhoneNumber,
+  validateAppointmentDate,
+
+} from './validation';
+
 
 export default function BlogView() {
   const [formData, setFormData] = useState({
@@ -47,10 +58,12 @@ export default function BlogView() {
   const [specialities, setSpecialities] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [step, setStep] = useState(1);
-  const [ setAppointments] = useState([]);
-
+  const [appointments, setAppointments] = useState([]);
+  console.log(appointments);
 
   useEffect(() => {
+
+  
     const fetchVilles = async () => {
       try {
         const response = await fetch('http://localhost:3000/auth/villes');
@@ -87,6 +100,7 @@ export default function BlogView() {
       console.error('Could not fetch the rooms:', error);
     }
   };
+  
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -109,6 +123,39 @@ export default function BlogView() {
     }));
   };
 
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'cine':
+        return validateCine(value);
+      case 'email':
+        return validateEmail(value);
+      case 'firstName':
+        return validateFirstName(value);
+      case 'lastName':
+        return validateLastName(value);
+      case 'birthdate':
+        return validateBirthdate(value);
+      case 'age':
+        return validateAge(value);
+      case 'address':
+        return validateAddress(value);
+      case 'phoneNumber':
+        return validatePhoneNumber(value);
+      case 'gender':
+        return validateGender(value);
+      case 'speciality':
+        return validateSpeciality(value);
+      case 'room':
+        return validateRoom(value);
+      case 'patient':
+        return validatePatient(value);
+      case 'appointment_date':
+        return validateAppointmentDate(value);
+      default:
+        return '';
+    }
+  };
+
   const validateStep1 = () => {
     const errors = {};
     const fields = ['cine', 'email', 'firstName', 'lastName', 'birthdate', 'age', 'region', 'address', 'phoneNumber', 'gender'];
@@ -123,7 +170,7 @@ export default function BlogView() {
 
   const validateStep2 = () => {
     const errors = {};
-    const fields = ['speciality', 'room', 'patient', 'appointmentDate'];
+    const fields = ['speciality', 'room', 'patient', 'appointment_date'];
     fields.forEach((field) => {
       const error = validateField(field, formData[field]);
       if (error) {
@@ -145,12 +192,6 @@ export default function BlogView() {
 
     if (Object.keys(errors).length === 0) {
       if (step === 1) {
-        // Stockez la valeur de "cine" dans "patient"
-        setFormData(prev => ({
-          ...prev,
-          patient: prev.cine
-        }));
-        setStep(2);
         try {
           const response = await axios.post('http://localhost:3000/auth/patients', formData);
           if (!response.ok) {
@@ -158,14 +199,19 @@ export default function BlogView() {
           }
           const data = await response.json();
           console.log('Data from server:', data);
-          // Afficher un message de succès ou rediriger l'utilisateur vers une autre page, etc.
         } catch (error) {
           console.error('Error while submitting form:', error);
           // Afficher un message d'erreur à l'utilisateur
         }
+        // Stockez la valeur de "cine" dans "patient"
+        setFormData(prev => ({
+          ...prev,
+          patient: prev.cine
+        }));
+        setStep(2);
       } else {
         // Handle final form submission
-       
+        addAppointment();
       }
     } else {
       console.log('Errors:', errors);
