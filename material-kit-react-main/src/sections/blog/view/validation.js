@@ -105,6 +105,14 @@ export const validateCine = (value) => {
     if (!value) {
       return 'La date de rendez-vous est requise';
     }
-    // Add any specific validation logic for appointment date here
+  
+    const selectedDate = new Date(value);
+    const now = new Date();
+  
+    if (selectedDate < now) {
+      return 'La date de rendez-vous doit être égale ou postérieure à la date actuelle';
+    }
+  
     return '';
   };
+  
